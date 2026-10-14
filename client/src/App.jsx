@@ -1,13 +1,17 @@
-import { useEffect, useState } from 'react';
-import { api } from './api.js';
-import { unlockAudio } from './lib/audio.js';
-import Gate from './components/Gate.jsx';
-import Cook from './Cook.jsx';
+import { useEffect, useState } from "react";
+import { api } from "./api.js";
+import { unlockAudio } from "./lib/audio.js";
+import Gate from "./components/Gate.jsx";
+import Cook from "./Cook.jsx";
 
-const SID = 'cook-along-sid';
+const SID = "cook-along-sid";
 
 export default function App() {
-  const [boot, setBoot] = useState({ recipes: null, resume: null, error: null });
+  const [boot, setBoot] = useState({
+    recipes: null,
+    resume: null,
+    error: null,
+  });
   const [run, setRun] = useState(null); // { recipe, session, sensors }
 
   useEffect(() => {
@@ -19,7 +23,9 @@ export default function App() {
         try {
           const session = await api.getSession(id);
           resume = { session, recipe: await api.recipe(session.recipeSlug) };
-        } catch { localStorage.removeItem(SID); }
+        } catch {
+          localStorage.removeItem(SID);
+        }
       }
       setBoot({ recipes, resume, error: null });
     })().catch((e) => setBoot({ recipes: [], resume: null, error: e.message }));
@@ -29,11 +35,22 @@ export default function App() {
   const start = async (slug, sensors, continuing = false) => {
     unlockAudio();
     if (continuing) return setRun({ ...boot.resume, sensors });
-    const [recipe, session] = await Promise.all([api.recipe(slug), api.createSession(slug)]);
+    const [recipe, session] = await Promise.all([
+      api.recipe(slug),
+      api.createSession(slug),
+    ]);
     localStorage.setItem(SID, session._id);
     setRun({ recipe, session, sensors });
   };
 
-  if (!run) return <Gate recipes={boot.recipes} resume={boot.resume} error={boot.error} onStart={start} />;
+  if (!run)
+    return (
+      <Gate
+        recipes={boot.recipes}
+        resume={boot.resume}
+        error={boot.error}
+        onStart={start}
+      />
+    );
   return <Cook key={run.session._id} {...run} />;
 }
